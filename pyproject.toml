@@ -1,0 +1,38 @@
+[project]
+name = "remoteappdock"
+version = "0.1.0"
+description = "RemoteAppDock - Python reimplementation of the Windows taskbar and notification area for RDP RemoteApp environments."
+requires-python = ">=3.13"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Carlos" }
+]
+
+dependencies = [
+    "PySide6>=6.8",
+    "pywin32>=308; platform_system=='Windows'",
+]
+
+[project.optional-dependencies]
+build = [
+    "pyinstaller>=6.12",
+]
+
+[tool.uv]
+default-groups = ["build"]
+
+[dependency-groups]
+build = [
+    "pyinstaller>=6.12",
+]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["remoteappdock"]
