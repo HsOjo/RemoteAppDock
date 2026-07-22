@@ -1,16 +1,18 @@
 # RemoteAppDock
 
-用 Python 实现的 Windows 任务栏替代方案，面向 RDP RemoteApp 环境部署。
+English | [简体中文](README_CN.md)
 
-## 范围
+A Windows taskbar replacement implemented in Python, designed for RDP RemoteApp environments.
 
-- 窗口管理（任务列表）
-- 托盘管理（通知区域）
-- 任务栏定位（AppBar）
+## Scope
 
-不包含：开始菜单、主题系统、多语言、自动更新。
+- Window management (task list)
+- Tray management (notification area)
+- Taskbar positioning (AppBar)
 
-## 技术栈
+Not included: Start menu, theming system, localization, auto-update.
+
+## Tech Stack
 
 - Python 3.13
 - PySide6
@@ -18,34 +20,34 @@
 - PyInstaller
 - uv
 
-## 项目结构
+## Project Structure
 
 ```text
 remoteappdock/
 ├── main.py
 ├── app.py
 ├── config.py
-├── models/          # 数据模型
-├── win32/           # Win32 API 封装
-├── services/        # 业务服务
+├── models/          # Data models
+├── win32/           # Win32 API wrappers
+├── services/        # Business services
 ├── ui/              # PySide6 UI
-└── utils/           # 工具函数
+└── utils/           # Utilities
 ```
 
-## 开发
+## Development
 
 ```powershell
 uv sync
 uv run python -m remoteappdock.main
 ```
 
-## 测试
+## Testing
 
 ```powershell
 uv run pytest
 ```
 
-## 打包
+## Packaging
 
 ```powershell
 uv run pyinstaller RemoteAppDock.spec --clean --noconfirm
