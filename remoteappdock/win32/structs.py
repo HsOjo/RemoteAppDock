@@ -1,4 +1,11 @@
-"""Win32 结构体定义。"""
+"""Win32 结构体定义。
+
+本文件部分内容改编自 ManagedShell（Copyright (c) Cairo Shell 及贡献者，
+https://github.com/cairoshell/ManagedShell），依据 Apache License 2.0 授权。
+相关结构体（NOTIFYICONDATA / SHELLTRAYDATA / TRAYITEM 布局）由 C# 移植为
+Python，并已在此基础上修改。Apache-2.0 许可全文见 third_party/ManagedShell/LICENSE，
+归属说明见项目根目录 NOTICE 文件。
+"""
 
 import ctypes
 from ctypes import Structure, c_void_p, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong, c_short, c_ushort, c_byte, c_char, c_wchar, c_bool, POINTER, sizeof, byref

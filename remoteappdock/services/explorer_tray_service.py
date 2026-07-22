@@ -6,6 +6,12 @@
 实现方式对照 ManagedShell ExplorerTrayService：
 定位 Shell_TrayWnd > TrayNotifyWnd > SysPager > ToolbarWindow32，
 通过 TB_BUTTONCOUNT / TB_GETBUTTON 跨进程读取每个按钮的 TRAYITEM 数据。
+
+本文件部分内容改编自 ManagedShell（Copyright (c) Cairo Shell 及贡献者，
+https://github.com/cairoshell/ManagedShell），依据 Apache License 2.0 授权。
+Explorer 托盘工具栏跨进程枚举逻辑由 C# 移植为 Python，并已在此基础上修改。
+Apache-2.0 许可全文见 third_party/ManagedShell/LICENSE，归属说明见项目根目录
+NOTICE 文件。
 """
 
 import ctypes

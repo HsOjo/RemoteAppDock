@@ -1,0 +1,43 @@
+RemoteAppDock
+Copyright (c) 2026 HsOjo
+
+This product includes software derived from ManagedShell.
+
+--------------------------------------------------------------------------------
+
+ManagedShell
+Copyright (c) Cairo Shell (cairoshell) and contributors
+https://github.com/cairoshell/ManagedShell
+
+Licensed under the Apache License, Version 2.0 (the "License"); a copy of the
+full license text is provided at third_party/ManagedShell/LICENSE, or available
+at http://www.apache.org/licenses/LICENSE-2.0.
+
+Portions of the following files are derived from or modeled after ManagedShell
+(C# / .NET), and have been reimplemented in Python. These files have been
+modified from the original ManagedShell sources:
+
+  - remoteappdock/win32/structs.py
+      NOTIFYICONDATA / SHELLTRAYDATA / TRAYITEM structure layouts, modeled after
+      ManagedShell Interop.NativeMethods.Shell32 and WindowsTray.ExplorerTrayService.
+
+  - remoteappdock/services/tray_service.py
+      Shell_TrayWnd tray host, WM_COPYDATA notification-icon protocol handling,
+      and field-merge logic, modeled after ManagedShell WindowsTray.NotificationArea
+      and TrayService.
+
+  - remoteappdock/services/explorer_helper.py
+      Explorer taskbar hide/restore logic, modeled after ManagedShell
+      Common.Helpers.ExplorerHelper.
+
+  - remoteappdock/services/explorer_tray_service.py
+      Cross-process enumeration of the existing Explorer tray toolbar, modeled
+      after ManagedShell WindowsTray.ExplorerTrayService.
+
+RemoteAppDock as a whole is licensed under the GNU General Public License,
+version 3 or (at your option) any later version; see the LICENSE file. The
+Apache License 2.0 is compatible with GPLv3, and the portions derived from
+ManagedShell are incorporated under that compatibility. The attribution
+requirements of the Apache-2.0 license (this NOTICE, the retained license text
+at third_party/ManagedShell/LICENSE, and the modification notices in the
+affected source files) continue to apply to those portions.

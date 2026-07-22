@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "RemoteAppDock - Python reimplementation of the Windows taskbar and notification area for RDP RemoteApp environments."
 requires-python = ">=3.13"
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-or-later" }
 authors = [
     { name = "Carlos" }
 ]

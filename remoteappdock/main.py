@@ -1,4 +1,19 @@
-"""RemoteAppDock 应用入口。"""
+"""RemoteAppDock 应用入口。
+
+RemoteAppDock - Windows 任务栏替代方案。
+Copyright (C) 2026 HsOjo
+
+本程序为自由软件：你可以依据自由软件基金会发布的 GNU 通用公共许可证
+（GPL）第 3 版，或（由你选择）任何更新版本，重新发布和/或修改它。
+
+本程序基于"希望其有用"的目的发布，但不提供任何担保；甚至不含对适销性或
+特定用途适用性的默示担保。详见 GNU 通用公共许可证。
+
+你应已随本程序收到一份 GNU 通用公共许可证副本（见项目根目录 LICENSE）。
+如果没有，请参见 <https://www.gnu.org/licenses/>。
+
+本项目部分内容改编自 ManagedShell（Apache-2.0），归属说明见 NOTICE 文件。
+"""
 
 import sys
 

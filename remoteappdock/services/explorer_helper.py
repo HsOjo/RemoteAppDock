@@ -6,6 +6,12 @@
 - 通过 SetWindowPos(SWP_HIDEWINDOW) 隐藏 Shell_TrayWnd 与 Shell_SecondaryTrayWnd。
 - 启动监控定时器，若 Explorer 重新显示任务栏则再次隐藏。
 - 退出时恢复原始状态与可见性。
+
+本文件部分内容改编自 ManagedShell（Copyright (c) Cairo Shell 及贡献者，
+https://github.com/cairoshell/ManagedShell），依据 Apache License 2.0 授权。
+Explorer 任务栏隐藏/恢复逻辑由 C# 移植为 Python，并已在此基础上修改。
+Apache-2.0 许可全文见 third_party/ManagedShell/LICENSE，归属说明见项目根目录
+NOTICE 文件。
 """
 
 import logging

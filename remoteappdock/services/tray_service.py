@@ -1,6 +1,12 @@
 """托盘宿主服务。
 
 创建 Shell_TrayWnd 窗口，接收其他进程通过 WM_COPYDATA 发送的托盘图标消息。
+
+本文件部分内容改编自 ManagedShell（Copyright (c) Cairo Shell 及贡献者，
+https://github.com/cairoshell/ManagedShell），依据 Apache License 2.0 授权。
+托盘协议处理与字段合并逻辑由 C# 移植为 Python，并已在此基础上修改。
+Apache-2.0 许可全文见 third_party/ManagedShell/LICENSE，归属说明见项目根目录
+NOTICE 文件。
 """
 
 import ctypes
