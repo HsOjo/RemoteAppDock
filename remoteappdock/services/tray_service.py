@@ -19,7 +19,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from remoteappdock.win32 import constants, api
 from remoteappdock.win32.api import (
-    SendMessageW, RegisterWindowMessageW, PostMessageW, SendNotifyMessageW, FindWindowW,
+    SendMessageW, RegisterWindowMessageW, SendNotifyMessageW, FindWindowW,
     get_window_text, get_class_name,
 )
 from remoteappdock.win32.message_pump import Win32MessageThread
@@ -215,7 +215,11 @@ class TrayService(QObject):
         else:
             wParam = uID
             lParam = msg
-        return bool(PostMessageW(hWnd, callback_message, wParam, lParam))
+        # 必须用 SendNotifyMessage（对齐 ManagedShell NotifyIcon.SendMessage）。
+        # Explorer 派发托盘回调用的是 sent 语义而非 posted：部分程序只处理
+        # SendNotifyMessage 投递的回调，用 PostMessage 会被直接忽略，表现为
+        # 点击/右键无反应（RDP 下时序变化时尤为明显）。
+        return bool(SendNotifyMessageW(hWnd, callback_message, wParam, lParam))
 
     def forward_select_event(self, hWnd: int, uID: int, callback_message: int) -> bool:
         """转发左键选择（NIN_SELECT）。"""
