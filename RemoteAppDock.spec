@@ -4,7 +4,7 @@ import glob
 import os
 
 
-project_root = os.path.abspath(os.path.dirname(SPECPATH))
+project_root = os.path.abspath(SPECPATH)
 i18n_files = glob.glob(os.path.join(project_root, 'remoteappdock', 'i18n', '*.qm'))
 datas = [(qm, 'remoteappdock/i18n') for qm in i18n_files]
 
