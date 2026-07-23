@@ -1,5 +1,7 @@
 # RemoteAppDock
 
+![RemoteAppDock Icon](assets/app-icon-256.png)
+
 English | [简体中文](README_CN.md)
 
 A Windows taskbar replacement implemented in Python, designed for RDP RemoteApp environments.

@@ -1,5 +1,7 @@
 # RemoteAppDock
 
+![RemoteAppDock 图标](assets/app-icon-256.png)
+
 [English](README.md) | 简体中文
 
 用 Python 实现的 Windows 任务栏替代方案，面向 RDP RemoteApp 环境部署。
