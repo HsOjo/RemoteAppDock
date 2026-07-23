@@ -394,14 +394,30 @@ class TaskbarWindow(QMainWindow):
             "A Windows taskbar replacement for RDP RemoteApp environments.<br><br>"
             "Repository: <a href=\"{repo_url}\">{repo_url}</a>"
         ).format(version=APP_VERSION, repo_url=repo_url)
-        msg = QMessageBox(self)
+        # 不将对话框作为 AppBar 任务栏窗口的子窗口，避免拖移时父窗口影响其几何；
+        # 使用独立顶层对话框 + 置顶 + 固定尺寸，彻底防止拖移后缩小。
+        msg = QMessageBox()
+        msg.setWindowModality(Qt.WindowModality.ApplicationModal)
+        msg.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowStaysOnTopHint)
         msg.setWindowTitle(self.tr("About RemoteAppDock"))
         msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
         msg.setText(text)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        # 让 QMessageBox 内部 QLabel 的仓库链接可被点击并在默认浏览器打开
+        # 让 QMessageBox 内部 QLabel 的仓库链接可被点击并在默认浏览器打开；
+        # 禁用自动换行，使短文本以自然宽度渲染，避免 URL 被折断。
         for label in msg.findChildren(QLabel):
             label.setOpenExternalLinks(True)
+            if label.text():
+                label.setWordWrap(False)
+        msg.setFixedSize(msg.sizeHint())
+        # 在任务栏窗口上居中显示。
+        if self.isVisible():
+            parent_geo = self.geometry()
+            msg.move(
+                parent_geo.x() + (parent_geo.width() - msg.width()) // 2,
+                parent_geo.y() + (parent_geo.height() - msg.height()) // 2,
+            )
         msg.exec()
 
     def _on_window_added(self, window) -> None:
