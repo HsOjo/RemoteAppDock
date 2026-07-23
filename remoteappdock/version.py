@@ -43,7 +43,7 @@ def _get_version() -> str:
     except PackageNotFoundError:
         pass
 
-    return "0.1.0"
+    return "0.0.0"  # 回退版本：确保检查更新时始终能检测到新版
 
 
 APP_VERSION = _get_version()

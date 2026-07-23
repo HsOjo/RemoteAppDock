@@ -104,7 +104,7 @@ class TestCheckUpdate(unittest.TestCase):
         html = """
         <html>
         <body>
-            <a href="/HsOjo/RemoteAppDock/releases/tag/0.2.0">0.2.0</a>
+            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
             <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
         </body>
         </html>
@@ -121,7 +121,7 @@ class TestCheckUpdate(unittest.TestCase):
             release, have_new = updater.check_update()
 
         self.assertTrue(have_new)
-        self.assertEqual(release.tag_name, "0.2.0")
+        self.assertEqual(release.tag_name, "0.3.0")
 
     def test_cache_is_used(self):
         html = """
@@ -154,7 +154,7 @@ class TestCheckUpdate(unittest.TestCase):
         html = """
         <html>
         <body>
-            <a href="/HsOjo/RemoteAppDock/releases/tag/0.2.0">0.2.0</a>
+            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
             <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
         </body>
         </html>
@@ -173,7 +173,7 @@ class TestCheckUpdate(unittest.TestCase):
             updater._update_cache = (updater._update_cache[0], updater._update_cache[1], time.time() - 600)
             release, have_new = updater.check_update(force=True)
 
-        self.assertEqual(release.tag_name, "0.2.0")
+        self.assertEqual(release.tag_name, "0.3.0")
         self.assertTrue(have_new)
 
 
