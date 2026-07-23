@@ -48,13 +48,13 @@ jobs:
       - name: Build with PyInstaller
         run: uv run pyinstaller RemoteAppDock.spec --clean --noconfirm
 
-      - name: Rename artifact
+      - name: Package artifact
         id: package
         shell: pwsh
         run: |
-          $name = "RemoteAppDock-v${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          Move-Item -Path "dist/RemoteAppDock.exe" -Destination "$name" -Force
-          echo "artifact=$name" >> $env:GITHUB_OUTPUT
+          $zipName = "RemoteAppDock-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+          Compress-Archive -Path "dist/RemoteAppDock/*" -DestinationPath $zipName -Force
+          echo "artifact=$zipName" >> $env:GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
