@@ -160,6 +160,7 @@ class TaskbarWindow(QMainWindow):
         # 窗体空白处右键菜单；子控件（任务按钮等）有自己的菜单，不会触发此处。
         menu = QMenu(self)
         menu.addAction("运行程序", self._open_run_dialog)
+        menu.addAction("任务管理器", self._open_task_manager)
         menu.addAction("打开资源管理器", self._open_explorer)
         menu.addAction("打开命令提示符", self._open_cmd)
         menu.addSeparator()
@@ -175,6 +176,13 @@ class TaskbarWindow(QMainWindow):
             run_file_dlg(int(self.winId()), 0, None, None, None, 0)
         except Exception:
             logger.exception("打开运行对话框失败")
+
+    def _open_task_manager(self) -> None:
+        """启动任务管理器。"""
+        try:
+            subprocess.Popen(["taskmgr.exe"])
+        except Exception:
+            logger.exception("启动任务管理器失败")
 
     def _open_explorer(self) -> None:
         try:
