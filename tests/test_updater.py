@@ -31,6 +31,54 @@ class TestVersionComparison(unittest.TestCase):
         self.assertFalse(updater.compare_version("0.1.0.1", "0.1.0"))
 
 
+class TestSystemProxy(unittest.TestCase):
+    """系统代理读取测试。"""
+
+    def test_returns_none_when_no_proxy(self):
+        with patch("remoteappdock.updater.urllib.request.getproxies", return_value={}):
+            self.assertIsNone(updater._get_system_proxy())
+
+    def test_merges_same_http_https_proxy(self):
+        with patch(
+            "remoteappdock.updater.urllib.request.getproxies",
+            return_value={"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"},
+        ):
+            self.assertEqual(updater._get_system_proxy(), {"all://": "http://127.0.0.1:7890"})
+
+    def test_keeps_different_proxies(self):
+        with patch(
+            "remoteappdock.updater.urllib.request.getproxies",
+            return_value={"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7891"},
+        ):
+            self.assertEqual(
+                updater._get_system_proxy(),
+                {"http://": "http://127.0.0.1:7890", "https://": "http://127.0.0.1:7891"},
+            )
+
+    def test_passes_proxy_to_httpx_client(self):
+        html = """
+        <html>
+        <body>
+            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
+            <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
+        </body>
+        </html>
+        """
+        with patch("remoteappdock.updater._get_system_proxy", return_value={"all://": "http://127.0.0.1:7890"}):
+            client = Mock()
+            client.get = lambda url, **kwargs: Mock(text=html, raise_for_status=Mock())
+            client.__enter__ = Mock(return_value=client)
+            client.__exit__ = Mock(return_value=False)
+
+            with patch("remoteappdock.updater.httpx.Client", return_value=client) as mock_client:
+                updater.get_latest_release()
+
+        self.assertTrue(mock_client.called)
+        for call in mock_client.call_args_list:
+            _, kwargs = call
+            self.assertEqual(kwargs["proxy"], {"all://": "http://127.0.0.1:7890"})
+
+
 class TestGetLatestRelease(unittest.TestCase):
     """GitHub Releases 页面解析测试。"""
 

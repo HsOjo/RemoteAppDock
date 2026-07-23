@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import re
 import time
+import urllib.request
 from dataclasses import dataclass
 from typing import Optional
 
@@ -55,6 +56,29 @@ def _norm_version(v: str) -> list[int]:
     return parts
 
 
+def _get_system_proxy() -> dict[str, str] | None:
+    """读取系统代理设置，兼容环境变量与 Windows 注册表。
+
+    httpx 默认只读取 HTTP_PROXY/HTTPS_PROXY 等环境变量，不会主动读取操作
+    系统代理配置；这里使用 urllib.request.getproxies() 统一获取，保证打包后
+    的桌面应用仍能复用用户已配置的系统代理。
+    """
+    proxies = urllib.request.getproxies()
+    if not proxies:
+        return None
+
+    result: dict[str, str] = {}
+    for scheme in ("http", "https"):
+        url = proxies.get(scheme)
+        if url:
+            result[f"{scheme}://"] = url
+
+    # http 与 https 指向同一代理时合并为 all://，便于 httpx 统一处理
+    if len(result) == 2 and result.get("http://") == result.get("https://"):
+        return {"all://": result["http://"]}
+    return result or None
+
+
 def compare_version(current: str, latest: str) -> bool:
     """Return True if `latest` is strictly newer than `current`.
 
@@ -76,13 +100,18 @@ def _fetch_page(client: httpx.Client, url: str, timeout: float = DEFAULT_TIMEOUT
     return resp.text
 
 
+def _create_client() -> httpx.Client:
+    """创建使用系统代理的 httpx 客户端。"""
+    return httpx.Client(headers={"User-Agent": USER_AGENT}, proxy=_get_system_proxy())
+
+
 def get_latest_release(timeout: float = DEFAULT_TIMEOUT) -> Release:
     """从 GitHub Releases 公开页面解析最新 Release。
 
     GitHub 未认证 REST API 的速率限制很低，因此采用 HTML 页面抓取。
     """
     releases_url = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
-    with httpx.Client(headers={"User-Agent": USER_AGENT}) as client:
+    with _create_client() as client:
         html = _fetch_page(client, releases_url, timeout)
     soup = BeautifulSoup(html, "html.parser")
 
@@ -113,7 +142,7 @@ def get_latest_release(timeout: float = DEFAULT_TIMEOUT) -> Release:
     assets: list[dict[str, str]] = []
     assets_url = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/expanded_assets/{tag_name}"
     try:
-        with httpx.Client(headers={"User-Agent": USER_AGENT}) as client:
+        with _create_client() as client:
             assets_html = _fetch_page(client, assets_url, timeout)
         assets_soup = BeautifulSoup(assets_html, "html.parser")
         asset_links = assets_soup.find_all(
