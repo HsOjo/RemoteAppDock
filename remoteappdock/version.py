@@ -1,10 +1,9 @@
 """应用版本信息。
 
-版本以 pyproject.toml 中的 project.version 为准。运行时优先读取打包或源码目录
-中的 pyproject.toml，否则回退到安装包元数据。
+开发环境下版本以 pyproject.toml 中的 project.version 为准；PyInstaller 打包后不再
+附带 pyproject.toml，版本从安装包元数据中读取（仍由 pyproject.toml 生成）。
 """
 
-import sys
 import tomllib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -22,14 +21,6 @@ def _read_version_from_pyproject(path: Path) -> str | None:
 
 def _get_version() -> str:
     """返回应用版本号。"""
-    # PyInstaller 打包环境：pyproject.toml 位于 sys._MEIPASS 根目录
-    if getattr(sys, "frozen", False):
-        meipass = getattr(sys, "_MEIPASS", None)
-        if meipass:
-            version_from_bundle = _read_version_from_pyproject(Path(meipass) / "pyproject.toml")
-            if version_from_bundle:
-                return version_from_bundle
-
     # 开发环境：pyproject.toml 位于 remoteappdock 包的上级目录
     dev_pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
     if dev_pyproject.exists():
@@ -37,7 +28,7 @@ def _get_version() -> str:
         if version_from_dev:
             return version_from_dev
 
-    # 回退到安装包元数据（仍由 pyproject.toml 生成）
+    # 打包环境或安装环境：从安装包元数据读取（由 pyproject.toml 生成）
     try:
         return version("remoteappdock")
     except PackageNotFoundError:
