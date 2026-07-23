@@ -43,7 +43,7 @@ class TestSystemProxy(unittest.TestCase):
             "remoteappdock.updater.urllib.request.getproxies",
             return_value={"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"},
         ):
-            self.assertEqual(updater._get_system_proxy(), {"all://": "http://127.0.0.1:7890"})
+            self.assertEqual(updater._get_system_proxy(), "http://127.0.0.1:7890")
 
     def test_keeps_different_proxies(self):
         with patch(
@@ -64,7 +64,7 @@ class TestSystemProxy(unittest.TestCase):
         </body>
         </html>
         """
-        with patch("remoteappdock.updater._get_system_proxy", return_value={"all://": "http://127.0.0.1:7890"}):
+        with patch("remoteappdock.updater._get_system_proxy", return_value="http://127.0.0.1:7890"):
             client = Mock()
             client.get = lambda url, **kwargs: Mock(text=html, raise_for_status=Mock())
             client.__enter__ = Mock(return_value=client)
@@ -76,7 +76,32 @@ class TestSystemProxy(unittest.TestCase):
         self.assertTrue(mock_client.called)
         for call in mock_client.call_args_list:
             _, kwargs = call
-            self.assertEqual(kwargs["proxy"], {"all://": "http://127.0.0.1:7890"})
+            self.assertEqual(kwargs["proxy"], "http://127.0.0.1:7890")
+
+    def test_passes_mounts_to_httpx_client_for_split_proxy(self):
+        html = """
+        <html>
+        <body>
+            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
+            <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
+        </body>
+        </html>
+        """
+        proxy_config = {"http://": "http://127.0.0.1:7890", "https://": "http://127.0.0.1:7891"}
+        with patch("remoteappdock.updater._get_system_proxy", return_value=proxy_config):
+            client = Mock()
+            client.get = lambda url, **kwargs: Mock(text=html, raise_for_status=Mock())
+            client.__enter__ = Mock(return_value=client)
+            client.__exit__ = Mock(return_value=False)
+
+            with patch("remoteappdock.updater.httpx.Client", return_value=client) as mock_client:
+                updater.get_latest_release()
+
+        self.assertTrue(mock_client.called)
+        for call in mock_client.call_args_list:
+            _, kwargs = call
+            self.assertIn("mounts", kwargs)
+            self.assertEqual(set(kwargs["mounts"].keys()), {"http://", "https://"})
 
 
 class TestGetLatestRelease(unittest.TestCase):
