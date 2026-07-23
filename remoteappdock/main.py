@@ -19,12 +19,14 @@ import sys
 
 import signal
 
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from remoteappdock.app import App
 from remoteappdock.config import AppConfig
 from remoteappdock.i18n import install_translator
 from remoteappdock.single_instance import SingleInstanceManager
+from remoteappdock.utils.helpers import get_app_icon_path
 from remoteappdock.version import APP_VERSION
 
 
@@ -39,6 +41,10 @@ def main():
     app.setApplicationName("RemoteAppDock")
     app.setOrganizationName("remoteappdock")
     app.setApplicationVersion(APP_VERSION)
+
+    icon_path = get_app_icon_path()
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
 
     # 加载配置（必须在 setOrganizationName 之后，否则 QStandardPaths 路径不一致）
     config = AppConfig.load()

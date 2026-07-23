@@ -16,6 +16,7 @@ from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
 from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result
+from remoteappdock.utils.helpers import get_app_icon_path
 from remoteappdock.win32 import api, constants
 from remoteappdock.win32.structs import MARGINS
 
@@ -119,9 +120,8 @@ class TaskbarWindow(QMainWindow):
         """启用 Win11 Acrylic 亚克力背景材质（Win11 22H2+ 生效，旧系统静默忽略）。"""
         hwnd = int(self.winId())
 
-        # 强制移除标题栏图标：置空 ICON_SMALL/ICON_BIG，避免 Windows 继承默认图标。
-        api.SendMessageW(hwnd, constants.WM_SETICON, constants.ICON_SMALL, 0)
-        api.SendMessageW(hwnd, constants.WM_SETICON, constants.ICON_BIG, 0)
+        # 设置应用图标作为窗口图标（标题栏、Alt-Tab、任务切换等）。
+        self._set_window_icon(hwnd)
 
         # 将 DWM 玻璃框扩展到整个客户区（margins 全 -1 = "sheet of glass"）。
         # 否则透明客户区不在 DWM 合成范围内，会显示为纯黑色。
@@ -135,6 +135,43 @@ class TaskbarWindow(QMainWindow):
         )
         if hr != 0:
             logger.debug("启用 Acrylic 失败(HRESULT=0x%08X)，当前系统可能不支持", hr & 0xFFFFFFFF)
+
+    def _set_window_icon(self, hwnd: int) -> None:
+        """使用应用图标文件设置窗口大/小图标。"""
+        icon_path = get_app_icon_path()
+        if not icon_path.exists():
+            logger.warning("应用图标文件不存在: %s", icon_path)
+            return
+
+        # 小图标（标题栏、任务管理器等）
+        small_size = api.GetSystemMetrics(constants.SM_CXSMICON)
+        hicon_small = api.LoadImageW(
+            0,
+            str(icon_path),
+            constants.IMAGE_ICON,
+            small_size,
+            small_size,
+            constants.LR_LOADFROMFILE | constants.LR_SHARED,
+        )
+        if hicon_small:
+            api.SendMessageW(
+                hwnd, constants.WM_SETICON, constants.ICON_SMALL, hicon_small
+            )
+
+        # 大图标（Alt-Tab、任务切换等）
+        large_size = api.GetSystemMetrics(constants.SM_CXICON)
+        hicon_big = api.LoadImageW(
+            0,
+            str(icon_path),
+            constants.IMAGE_ICON,
+            large_size,
+            large_size,
+            constants.LR_LOADFROMFILE | constants.LR_SHARED,
+        )
+        if hicon_big:
+            api.SendMessageW(
+                hwnd, constants.WM_SETICON, constants.ICON_BIG, hicon_big
+            )
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)

@@ -343,6 +343,10 @@ GetIconInfo = user32.GetIconInfo
 GetIconInfo.argtypes = [HICON, POINTER(ICONINFO)]
 GetIconInfo.restype = BOOL
 
+LoadImageW = user32.LoadImageW
+LoadImageW.argtypes = [HINSTANCE, LPCWSTR, UINT, c_int, c_int, UINT]
+LoadImageW.restype = HANDLE
+
 DrawIconEx = user32.DrawIconEx
 DrawIconEx.argtypes = [HDC, c_int, c_int, HICON, c_int, c_int, UINT, HBRUSH, UINT]
 DrawIconEx.restype = BOOL
