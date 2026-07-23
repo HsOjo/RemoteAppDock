@@ -6,6 +6,16 @@ English | [简体中文](README_CN.md)
 
 A Windows taskbar replacement implemented in Python, designed for RDP RemoteApp environments.
 
+## Use Cases
+
+RemoteAppDock is intended for users who run Windows applications through RDP RemoteApp and miss the regular Windows desktop shell experience. Specifically, it addresses the following gaps in a typical RemoteApp session:
+
+- **Window management**: RemoteApp normally shows only the application window itself. RemoteAppDock restores a taskbar-like window list so you can see and switch between all open windows.
+- **Tray icon visibility**: Many Windows applications put important controls in the notification area (system tray). RemoteAppDock hosts these tray icons so they remain visible and usable.
+- **Program launcher**: RemoteApp sessions usually do not provide a Start menu or launcher. RemoteAppDock provides a simple application launcher to start additional programs from within the RemoteApp session.
+
+To learn how to create and publish RemoteApp programs on RDP, see the [RemoteApp Tool](https://github.com/kimmknight/remoteapptool) documentation.
+
 ## Scope
 
 - Window management (task list)

@@ -6,6 +6,16 @@
 
 用 Python 实现的 Windows 任务栏替代方案，面向 RDP RemoteApp 环境部署。
 
+## 使用场景
+
+RemoteAppDock 面向通过 RDP RemoteApp 运行 Windows 程序、但又缺少完整 Windows 桌面外壳体验的用户。它主要解决 RemoteApp 会话中常见的以下缺失功能：
+
+- **窗口管理**：RemoteApp 通常只显示单个程序窗口，RemoteAppDock 提供类任务栏的窗口列表，可查看并切换所有已打开的窗口。
+- **托盘图标显示**：许多 Windows 程序将重要控制入口放在通知区域（系统托盘）。RemoteAppDock 承载这些托盘图标，使其在 RemoteApp 会话中可见、可用。
+- **程序启动台**：RemoteApp 会话通常没有开始菜单或启动台，RemoteAppDock 提供简单的程序启动入口，方便在会话中启动其他程序。
+
+关于如何在 RDP 中创建和发布 RemoteApp，可参考 [RemoteApp Tool](https://github.com/kimmknight/remoteapptool) 的说明。
+
 ## 范围
 
 - 窗口管理（任务列表）
