@@ -1,11 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import glob
+import os
+
+
+project_root = os.path.abspath(os.path.dirname(SPECPATH))
+i18n_files = glob.glob(os.path.join(project_root, 'remoteappdock', 'i18n', '*.qm'))
+datas = [(qm, 'remoteappdock/i18n') for qm in i18n_files]
+
 
 a = Analysis(
     ['remoteappdock\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

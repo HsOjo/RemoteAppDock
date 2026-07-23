@@ -93,9 +93,9 @@ class TaskButton(QPushButton):
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         menu = QMenu(self)
-        menu.addAction("还原", lambda: self._tasks_service.restore_window(self._window.handle))
-        menu.addAction("最小化", lambda: self._tasks_service.minimize_window(self._window.handle))
-        menu.addAction("最大化", lambda: self._tasks_service.maximize_window(self._window.handle))
+        menu.addAction(self.tr("Restore"), lambda: self._tasks_service.restore_window(self._window.handle))
+        menu.addAction(self.tr("Minimize"), lambda: self._tasks_service.minimize_window(self._window.handle))
+        menu.addAction(self.tr("Maximize"), lambda: self._tasks_service.maximize_window(self._window.handle))
         menu.addSeparator()
-        menu.addAction("关闭", lambda: self._tasks_service.close_window(self._window.handle))
+        menu.addAction(self.tr("Close"), lambda: self._tasks_service.close_window(self._window.handle))
         menu.exec(event.globalPos())

@@ -256,12 +256,24 @@ class TaskbarWindow(QMainWindow):
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         # 窗体空白处右键菜单；子控件（任务按钮等）有自己的菜单，不会触发此处。
         menu = QMenu(self)
-        menu.addAction("运行程序", self._open_run_dialog)
-        menu.addAction("任务管理器", self._open_task_manager)
-        menu.addAction("打开资源管理器", self._open_explorer)
-        menu.addAction("打开命令提示符", self._open_cmd)
+        menu.addAction(self.tr("Run"), self._open_run_dialog)
+        menu.addAction(self.tr("Task Manager"), self._open_task_manager)
+        menu.addAction(self.tr("Explorer"), self._open_explorer)
+        menu.addAction(self.tr("Command Prompt"), self._open_cmd)
         menu.addSeparator()
-        menu.addAction("退出", QApplication.quit)
+
+        # 语言切换子菜单
+        lang_menu = QMenu(self.tr("Language"), menu)
+        current_lang = self._config.effective_language()
+        for code, label in (("zh_CN", "简体中文"), ("en_US", "English")):
+            action = lang_menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(current_lang == code)
+            action.triggered.connect(lambda checked, c=code: self._set_language(c))
+        menu.addMenu(lang_menu)
+
+        menu.addSeparator()
+        menu.addAction(self.tr("Exit"), QApplication.quit)
         menu.exec(event.globalPos())
 
     def _open_run_dialog(self) -> None:
@@ -292,6 +304,20 @@ class TaskbarWindow(QMainWindow):
             subprocess.Popen(["cmd.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
         except Exception:
             logger.exception("打开命令提示符失败")
+
+    def _set_language(self, language: str) -> None:
+        """切换界面语言并持久化到配置（动态生效，已创建控件下次刷新时更新）。"""
+        if self._config is None or self._config.effective_language() == language:
+            return
+        self._config.language = language
+        self._config.save()
+
+        qt_app = QCoreApplication.instance()
+        if qt_app is None:
+            return
+
+        from remoteappdock.i18n import set_application_language
+        set_application_language(qt_app, language)
 
     def _on_window_added(self, window) -> None:
         if window.handle in self._buttons:

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QStandardPaths
+from PySide6.QtCore import QLocale, QStandardPaths
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ class AppConfig:
     show_clock: bool = True
     multi_monitor: bool = False
     taskbar_scale: float = 1.0
+    language: str = "auto"  # auto, zh_CN, en_US
     geometry: WindowGeometry = field(default_factory=WindowGeometry)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,6 +54,7 @@ class AppConfig:
             "show_clock": self.show_clock,
             "multi_monitor": self.multi_monitor,
             "taskbar_scale": self.taskbar_scale,
+            "language": self.language,
             "geometry": self.geometry.to_dict(),
         }
 
@@ -64,6 +66,7 @@ class AppConfig:
             show_clock=data.get("show_clock", True),
             multi_monitor=data.get("multi_monitor", False),
             taskbar_scale=data.get("taskbar_scale", 1.0),
+            language=data.get("language", "auto"),
             geometry=WindowGeometry.from_dict(data.get("geometry")),
         )
 
@@ -97,3 +100,10 @@ class AppConfig:
         except Exception:
             logger.exception("加载配置失败: %s", target)
             return cls()
+
+    def effective_language(self) -> str:
+        """返回实际生效的语言代码。"""
+        if self.language and self.language != "auto":
+            return self.language
+        locale = QLocale.system().name()  # 例如 "zh_CN" / "en_US"
+        return "zh_CN" if locale.startswith("zh") else "en_US"

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import QApplication
 
 from remoteappdock.app import App
 from remoteappdock.config import AppConfig
+from remoteappdock.i18n import install_translator
 
 
 def main():
@@ -33,6 +34,7 @@ def main():
 
     # 加载配置（必须在 setOrganizationName 之后，否则 QStandardPaths 路径不一致）
     config = AppConfig.load()
+    install_translator(app, config.effective_language())
 
     # 全局 QToolTip 样式：明确前景/背景色，避免继承深色主题后白底白字或黑底黑字。
     app.setStyleSheet(
