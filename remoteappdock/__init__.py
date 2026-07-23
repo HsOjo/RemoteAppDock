@@ -1,3 +1,5 @@
 """RemoteAppDock Python 包。"""
 
-__version__ = "0.1.0"
+from remoteappdock.version import APP_VERSION as __version__
+
+__all__ = ["__version__"]

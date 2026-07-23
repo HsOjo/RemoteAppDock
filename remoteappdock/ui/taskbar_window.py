@@ -15,6 +15,7 @@ from remoteappdock.services.tasks_service import WindowManager, TasksService
 from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
+from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result
 from remoteappdock.win32 import api, constants
 from remoteappdock.win32.structs import MARGINS
 
@@ -40,6 +41,7 @@ class TaskbarWindow(QMainWindow):
         self._appbar_manager = appbar_manager
         self._config = config or AppConfig.load()
         self._buttons: dict[int, TaskButton] = {}
+        self._update_thread: UpdateCheckThread | None = None
 
         self.setWindowTitle("")
         self.setMinimumWidth(72)
@@ -272,6 +274,8 @@ class TaskbarWindow(QMainWindow):
             action.triggered.connect(lambda checked, c=code: self._set_language(c))
         menu.addMenu(lang_menu)
 
+        menu.addAction(self.tr("Check for Updates"), self._check_for_updates)
+
         menu.addSeparator()
         menu.addAction(self.tr("Exit"), QApplication.quit)
         menu.exec(event.globalPos())
@@ -336,3 +340,24 @@ class TaskbarWindow(QMainWindow):
         button = self._buttons.get(window.handle)
         if button:
             button.update_window(window)
+
+    def _check_for_updates(self) -> None:
+        """手动触发后台更新检查。"""
+        if self._update_thread is not None and self._update_thread.isRunning():
+            return
+        self._update_thread = UpdateCheckThread(force=True, parent=self)
+        self._update_thread.finished.connect(self._on_update_finished)
+        self._update_thread.error.connect(self._on_update_error)
+        self._update_thread.finished.connect(self._update_thread.deleteLater)
+        self._update_thread.error.connect(self._update_thread.deleteLater)
+        self._update_thread.start()
+
+    def _on_update_finished(self, release, have_new: bool) -> None:
+        """后台更新检查成功完成。"""
+        self._update_thread = None
+        show_update_result(self, release, have_new)
+
+    def _on_update_error(self, message: str) -> None:
+        """后台更新检查失败。"""
+        self._update_thread = None
+        show_update_error(self, message)

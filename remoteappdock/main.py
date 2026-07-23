@@ -25,6 +25,7 @@ from remoteappdock.app import App
 from remoteappdock.config import AppConfig
 from remoteappdock.i18n import install_translator
 from remoteappdock.single_instance import SingleInstanceManager
+from remoteappdock.version import APP_VERSION
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("RemoteAppDock")
     app.setOrganizationName("remoteappdock")
-    app.setApplicationVersion("0.1.0")
+    app.setApplicationVersion(APP_VERSION)
 
     # 加载配置（必须在 setOrganizationName 之后，否则 QStandardPaths 路径不一致）
     config = AppConfig.load()

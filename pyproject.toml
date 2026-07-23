@@ -12,6 +12,8 @@ authors = [
 dependencies = [
     "PySide6>=6.8",
     "pywin32>=308; platform_system=='Windows'",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
 ]
 
 [project.optional-dependencies]
