@@ -64,9 +64,9 @@ def show_update_result(parent: QWidget | None, release: Release, have_new: bool)
         msg.setDefaultButton(QMessageBox.StandardButton.Open)
         msg.button(QMessageBox.StandardButton.Open).setText(_tr("View Download Page"))
         msg.button(QMessageBox.StandardButton.Close).setText(_tr("Close"))
-        # 固定尺寸并在父窗口居中，避免作为 AppBar 子窗口拖移后缩小。
+        # 固定尺寸并在父窗口所在屏幕居中，避免作为 AppBar 子窗口拖移后缩小。
         msg.setFixedSize(msg.sizeHint())
-        _center_dialog(msg, parent)
+        center_dialog(msg, parent)
         if msg.exec() == QMessageBox.StandardButton.Open:
             webbrowser.open(release.html_url or RELEASES_URL)
     else:
@@ -80,9 +80,9 @@ def show_update_result(parent: QWidget | None, release: Release, have_new: bool)
             _tr("You are using the latest version ({version}).").format(version=APP_VERSION)
         )
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        # 固定尺寸并在父窗口居中，避免作为 AppBar 子窗口拖移后缩小。
+        # 固定尺寸并在父窗口所在屏幕居中，避免作为 AppBar 子窗口拖移后缩小。
         msg.setFixedSize(msg.sizeHint())
-        _center_dialog(msg, parent)
+        center_dialog(msg, parent)
         msg.exec()
 
 
@@ -96,22 +96,21 @@ def show_update_error(parent: QWidget | None, message: str) -> None:
     msg.setIcon(QMessageBox.Icon.Critical)
     msg.setText(_tr("Failed to check for updates:\n{message}").format(message=message))
     msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-    # 固定尺寸并在父窗口居中，避免作为 AppBar 子窗口拖移后缩小。
+    # 固定尺寸并在父窗口所在屏幕居中，避免作为 AppBar 子窗口拖移后缩小。
     msg.setFixedSize(msg.sizeHint())
-    _center_dialog(msg, parent)
+    center_dialog(msg, parent)
     msg.exec()
 
 
-def _center_dialog(dialog: QWidget, parent: QWidget | None) -> None:
-    """将对话框在父窗口上居中；父窗口不可见时则居中于主屏幕。"""
+def center_dialog(dialog: QWidget, parent: QWidget | None) -> None:
+    """将对话框居中显示在其父窗口所在屏幕的可用区域内；父窗口不可见时则居中于主屏幕。"""
     if parent is not None and parent.isVisible():
-        parent_geo = parent.geometry()
-        dialog.move(
-            parent_geo.x() + (parent_geo.width() - dialog.width()) // 2,
-            parent_geo.y() + (parent_geo.height() - dialog.height()) // 2,
-        )
+        screen = QApplication.screenAt(parent.geometry().center())
     else:
         screen = QApplication.primaryScreen()
-        if screen is not None:
-            center = screen.availableGeometry().center()
-            dialog.move(center.x() - dialog.width() // 2, center.y() - dialog.height() // 2)
+    if screen is not None:
+        geo = screen.availableGeometry()
+        dialog.move(
+            geo.x() + (geo.width() - dialog.width()) // 2,
+            geo.y() + (geo.height() - dialog.height()) // 2,
+        )

@@ -16,7 +16,7 @@ from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
 from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
-from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result
+from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result, center_dialog
 from remoteappdock.utils.helpers import get_app_icon_path
 from remoteappdock.version import APP_VERSION, GITHUB_OWNER, GITHUB_REPO
 from remoteappdock.win32 import api, constants
@@ -410,14 +410,9 @@ class TaskbarWindow(QMainWindow):
             label.setOpenExternalLinks(True)
             if label.text():
                 label.setWordWrap(False)
+        # 固定尺寸并在父窗口所在屏幕居中，避免作为 AppBar 子窗口拖移后缩小。
         msg.setFixedSize(msg.sizeHint())
-        # 在任务栏窗口上居中显示。
-        if self.isVisible():
-            parent_geo = self.geometry()
-            msg.move(
-                parent_geo.x() + (parent_geo.width() - msg.width()) // 2,
-                parent_geo.y() + (parent_geo.height() - msg.height()) // 2,
-            )
+        center_dialog(msg, self)
         msg.exec()
 
     def _on_window_added(self, window) -> None:
