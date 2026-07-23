@@ -31,13 +31,13 @@ uv run python -m remoteappdock.main
 ## 测试
 
 ```powershell
-uv run pytest
+uv run --group dev pytest
 ```
 
 ## 打包
 
 ```powershell
-uv run pyinstaller RemoteAppDock.spec --clean --noconfirm
+uv run python -m PyInstaller RemoteAppDock.spec --clean --noconfirm
 ```
 
 ## 致谢
