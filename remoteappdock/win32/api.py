@@ -112,6 +112,10 @@ RegisterWindowMessageW = user32.RegisterWindowMessageW
 RegisterWindowMessageW.argtypes = [LPCWSTR]
 RegisterWindowMessageW.restype = UINT
 
+SystemParametersInfoW = user32.SystemParametersInfoW
+SystemParametersInfoW.argtypes = [UINT, UINT, LPVOID, UINT]
+SystemParametersInfoW.restype = BOOL
+
 # 事件钩子
 SetWinEventHook = user32.SetWinEventHook
 SetWinEventHook.argtypes = [DWORD, DWORD, HMODULE, c_void_p, DWORD, DWORD, DWORD]

@@ -45,6 +45,7 @@ class AppConfig:
     multi_monitor: bool = False
     taskbar_scale: float = 1.0
     language: str = "auto"  # auto, zh_CN, en_US
+    disable_snap_layout: bool = False  # 运行期间禁用 Win11 顶部分屏格子与贴靠提示
     geometry: WindowGeometry = field(default_factory=WindowGeometry)
 
     def to_dict(self) -> dict[str, Any]:
@@ -55,6 +56,7 @@ class AppConfig:
             "multi_monitor": self.multi_monitor,
             "taskbar_scale": self.taskbar_scale,
             "language": self.language,
+            "disable_snap_layout": self.disable_snap_layout,
             "geometry": self.geometry.to_dict(),
         }
 
@@ -67,6 +69,7 @@ class AppConfig:
             multi_monitor=data.get("multi_monitor", False),
             taskbar_scale=data.get("taskbar_scale", 1.0),
             language=data.get("language", "auto"),
+            disable_snap_layout=data.get("disable_snap_layout", False),
             geometry=WindowGeometry.from_dict(data.get("geometry")),
         )
 

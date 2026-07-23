@@ -14,6 +14,7 @@ from remoteappdock.services.tasks_service import WindowManager, TasksService
 from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.services.hotkey_manager import HotkeyManager
 from remoteappdock.services.explorer_helper import ExplorerHelper
+from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
 from remoteappdock.config import AppConfig
 
 
@@ -33,6 +34,7 @@ class App:
         self._appbar_manager: AppBarManager | None = None
         self._hotkey_manager: HotkeyManager | None = None
         self._explorer_helper: ExplorerHelper | None = None
+        self._snap_layout_helper: SnapLayoutHelper | None = None
         self._timer: QTimer | None = None
         self._drain_callbacks: list[Callable[[], None]] = []
 
@@ -55,6 +57,11 @@ class App:
         self._explorer_helper = ExplorerHelper()
         self._explorer_helper.hide_taskbar()
 
+        # Snap 分屏控制器（始终创建，供菜单随时切换；按配置决定是否立即禁用）
+        self._snap_layout_helper = SnapLayoutHelper()
+        if self._config.disable_snap_layout:
+            self._snap_layout_helper.disable()
+
         # 托盘服务：接管后续新注册的托盘图标
         self._tray_service = TrayService(self._notification_area)
         self._tray_service.start()
@@ -75,7 +82,8 @@ class App:
         self._main_window = TaskbarWindow(
             self._notification_area, self._tray_service,
             self._window_manager, self._tasks_service,
-            self._appbar_manager, self._config
+            self._appbar_manager, self._config,
+            snap_layout_helper=self._snap_layout_helper,
         )
         self._main_window.show()
 
@@ -129,6 +137,9 @@ class App:
             self._tray_service.stop()
             self._tray_service = None
             self._notification_area = None
+        if self._snap_layout_helper is not None:
+            self._snap_layout_helper.restore()
+            self._snap_layout_helper = None
         if self._explorer_helper is not None:
             self._explorer_helper.show_taskbar()
             self._explorer_helper = None

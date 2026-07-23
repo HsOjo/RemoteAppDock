@@ -13,6 +13,7 @@ from remoteappdock.services.notification_area import NotificationArea
 from remoteappdock.services.tray_service import TrayService
 from remoteappdock.services.tasks_service import WindowManager, TasksService
 from remoteappdock.services.appbar_manager import AppBarManager
+from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
 from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
 from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result
@@ -34,7 +35,8 @@ class TaskbarWindow(QMainWindow):
     def __init__(self, notification_area: NotificationArea, tray_service: TrayService,
                  window_manager: WindowManager, tasks_service: TasksService,
                  appbar_manager: AppBarManager | None = None,
-                 config: AppConfig | None = None, parent=None):
+                 config: AppConfig | None = None, parent=None,
+                 snap_layout_helper: SnapLayoutHelper | None = None):
         super().__init__(parent)
         self._notification_area = notification_area
         self._tray_service = tray_service
@@ -42,6 +44,7 @@ class TaskbarWindow(QMainWindow):
         self._tasks_service = tasks_service
         self._appbar_manager = appbar_manager
         self._config = config or AppConfig.load()
+        self._snap_layout_helper = snap_layout_helper
         self._buttons: dict[int, TaskButton] = {}
         self._update_thread: UpdateCheckThread | None = None
 
@@ -312,6 +315,12 @@ class TaskbarWindow(QMainWindow):
             action.triggered.connect(lambda checked, c=code: self._set_language(c))
         menu.addMenu(lang_menu)
 
+        # 关闭 Aero Snap（拖动窗口时的贴靠与顶部分屏格子）
+        snap_action = menu.addAction(self.tr("Disable Aero Snap"))
+        snap_action.setCheckable(True)
+        snap_action.setChecked(self._config.disable_snap_layout)
+        snap_action.toggled.connect(self._set_disable_snap_layout)
+
         menu.addAction(self.tr("Check for Updates"), self._check_for_updates)
 
         menu.addSeparator()
@@ -361,6 +370,20 @@ class TaskbarWindow(QMainWindow):
 
         from remoteappdock.i18n import set_application_language
         set_application_language(qt_app, language)
+
+    def _set_disable_snap_layout(self, enabled: bool) -> None:
+        """切换 Win11 分屏禁用状态，实时生效并持久化到配置。"""
+        if self._config is None or self._config.disable_snap_layout == enabled:
+            return
+        self._config.disable_snap_layout = enabled
+        self._config.save()
+
+        if self._snap_layout_helper is None:
+            return
+        if enabled:
+            self._snap_layout_helper.disable()
+        else:
+            self._snap_layout_helper.restore()
 
     def _show_about(self) -> None:
         """显示关于对话框，介绍应用信息与仓库位置。"""

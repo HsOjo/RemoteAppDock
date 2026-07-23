@@ -24,6 +24,10 @@
         <translation>语言</translation>
     </message>
     <message>
+        <source>Disable Aero Snap</source>
+        <translation>关闭 Aero Snap</translation>
+    </message>
+    <message>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
