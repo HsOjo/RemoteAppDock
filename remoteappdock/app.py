@@ -1,5 +1,8 @@
 """应用生命周期与单实例管理。"""
 
+import logging
+from typing import Callable
+
 from PySide6.QtCore import QCoreApplication, QTimer
 from PySide6.QtWidgets import QMainWindow
 
@@ -12,6 +15,9 @@ from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.services.hotkey_manager import HotkeyManager
 from remoteappdock.services.explorer_helper import ExplorerHelper
 from remoteappdock.config import AppConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 class App:
@@ -28,6 +34,11 @@ class App:
         self._hotkey_manager: HotkeyManager | None = None
         self._explorer_helper: ExplorerHelper | None = None
         self._timer: QTimer | None = None
+        self._drain_callbacks: list[Callable[[], None]] = []
+
+    def add_drain_callback(self, callback: Callable[[], None]) -> None:
+        """注册在每个 drain 周期执行的回调。"""
+        self._drain_callbacks.append(callback)
 
     def start(self):
         QCoreApplication.setApplicationName("RemoteAppDock")
@@ -77,7 +88,19 @@ class App:
         self._tray_service.icon_event.connect(self._drain_all_events)
         self._tasks_service.window_event.connect(self._drain_all_events)
 
+    def activate(self) -> None:
+        """将主窗口带到前台（供单实例激活请求调用）。"""
+        if self._main_window is not None:
+            self._main_window.show()
+            self._main_window.raise_()
+            self._main_window.activateWindow()
+
     def _drain_all_events(self) -> None:
+        for callback in self._drain_callbacks:
+            try:
+                callback()
+            except Exception:
+                logger.exception("Drain 回调执行失败")
         if self._tray_service is not None:
             self._tray_service.process_events()
         if self._tasks_service is not None:
