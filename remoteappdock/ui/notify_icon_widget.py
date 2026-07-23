@@ -41,6 +41,9 @@ class NotifyIconWidget(QLabel):
         self.setFixedSize(self.ICON_SIZE + 8, self.ICON_SIZE + 4)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # 右键交由 mousePressEvent/mouseReleaseEvent 转发给原窗口，禁止 Qt 合成
+        # QContextMenuEvent 冒泡到父级任务栏，否则会误触发任务栏本体的右键菜单。
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
         self.setToolTip(icon.title or f"Icon {icon.uID}")
         self.setStyleSheet(self._ICON_STYLE)
         self._update_icon()
@@ -176,16 +179,8 @@ class NotifyIconWidget(QLabel):
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        """滚轮事件：wParam 低字为 key flags，高字为 delta。"""
-        delta = event.angleDelta().y()
-        wParam = (delta << 16) & 0xFFFF0000
-        if hWnd := self._icon.hWnd:
-            if callback := self._icon.callback_message:
-                from ctypes import windll
-                windll.user32.PostMessageW(
-                    self._icon.hWnd, self._icon.callback_message,
-                    wParam, constants.WM_MOUSEWHEEL
-                )
+        """滚轮事件转发，走统一的 forward 通道（SendNotifyMessage）。"""
+        self._forward(constants.WM_MOUSEWHEEL)
         super().wheelEvent(event)
 
     def enterEvent(self, event) -> None:
