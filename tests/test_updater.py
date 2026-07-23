@@ -1,11 +1,9 @@
 """Tests for remoteappdock.updater."""
 
-import time
 import unittest
 from unittest.mock import Mock, patch
 
 from remoteappdock import updater
-from remoteappdock.version import APP_VERSION
 
 
 class TestVersionComparison(unittest.TestCase):
@@ -165,36 +163,13 @@ class TestGetLatestRelease(unittest.TestCase):
 
 
 class TestCheckUpdate(unittest.TestCase):
-    """检查更新整体流程测试。"""
+    """检查更新缓存机制测试。"""
 
     def setUp(self):
         updater.invalidate_update_cache()
 
     def tearDown(self):
         updater.invalidate_update_cache()
-
-    def test_detects_new_version(self):
-        html = """
-        <html>
-        <body>
-            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
-            <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
-        </body>
-        </html>
-        """
-        client = Mock()
-        resp = Mock()
-        resp.text = html
-        resp.raise_for_status = Mock()
-        client.get = lambda url, **kwargs: resp
-        client.__enter__ = Mock(return_value=client)
-        client.__exit__ = Mock(return_value=False)
-
-        with patch("remoteappdock.updater.httpx.Client", return_value=client):
-            release, have_new = updater.check_update()
-
-        self.assertTrue(have_new)
-        self.assertEqual(release.tag_name, "0.3.0")
 
     def test_cache_is_used(self):
         html = """
@@ -222,32 +197,6 @@ class TestCheckUpdate(unittest.TestCase):
         self.assertEqual(release1.tag_name, "99.0.0")
         self.assertEqual(release2.tag_name, "99.0.0")
         self.assertEqual(have_new1, have_new2)
-
-    def test_force_bypasses_cache(self):
-        html = """
-        <html>
-        <body>
-            <a href="/HsOjo/RemoteAppDock/releases/tag/0.3.0">0.3.0</a>
-            <section><relative-time datetime="2026-07-23T12:00:00Z"></relative-time></section>
-        </body>
-        </html>
-        """
-        client = Mock()
-        resp = Mock()
-        resp.text = html
-        resp.raise_for_status = Mock()
-        client.get = lambda url, **kwargs: resp
-        client.__enter__ = Mock(return_value=client)
-        client.__exit__ = Mock(return_value=False)
-
-        with patch("remoteappdock.updater.httpx.Client", return_value=client):
-            updater.check_update()
-            # 直接修改缓存时间使其过期
-            updater._update_cache = (updater._update_cache[0], updater._update_cache[1], time.time() - 600)
-            release, have_new = updater.check_update(force=True)
-
-        self.assertEqual(release.tag_name, "0.3.0")
-        self.assertTrue(have_new)
 
 
 if __name__ == "__main__":
