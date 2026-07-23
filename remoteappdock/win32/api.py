@@ -568,6 +568,28 @@ def get_window_process_id(hwnd: int) -> int:
     return pid.value
 
 
+def get_process_image_path(hwnd: int) -> str:
+    """获取窗口所属进程的可执行文件完整路径，失败返回空串。"""
+    if not hwnd:
+        return ""
+    pid = get_window_process_id(hwnd)
+    if not pid:
+        return ""
+    h_process = OpenProcess(constants.PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not h_process:
+        h_process = OpenProcess(constants.PROCESS_QUERY_INFORMATION, False, pid)
+    if not h_process:
+        return ""
+    try:
+        buffer = ctypes.create_unicode_buffer(constants.MAX_PATH)
+        size = DWORD(constants.MAX_PATH)
+        if QueryFullProcessImageNameW(h_process, 0, buffer, byref(size)):
+            return buffer.value
+        return ""
+    finally:
+        CloseHandle(h_process)
+
+
 def get_last_error() -> int:
     """获取最后一个 Win32 错误码。"""
     return GetLastError()

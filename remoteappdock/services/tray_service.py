@@ -42,11 +42,26 @@ class TrayService(QObject):
 
     icon_event = Signal(object)  # 异步事件，通知主线程处理
 
-    # Windows 系统托盘图标（音量/网络/电源等）的固定 GUID（对照 ManagedShell）。
-    # Win11 XAML 托盘下这些系统图标由我们无法正确渲染/交互，予以过滤。
-    # 当前仅过滤音量图标；如需扩展，加入对应 GUID 即可。
+    # Windows 系统托盘图标（SystemControlArea，音量/网络/电源/安全中心等）的
+    # 固定 GUID（对照 ManagedShell NotificationArea 中的 *_GUID 常量）。
+    # 这些系统图标由 Explorer/XAML 托管，本项目无法正确渲染与交互，全部过滤。
     _FILTERED_GUIDS = frozenset({
-        "{7820AE73-23E3-4229-82C1-E41CB67D5B9C}",  # VOLUME
+        "{7820AE73-23E3-4229-82C1-E41CB67D5B9C}",  # VOLUME     音量
+        "{7820AE74-23E3-4229-82C1-E41CB67D5B9C}",  # NETWORK    网络
+        "{7820AE75-23E3-4229-82C1-E41CB67D5B9C}",  # POWER      电源
+        "{7820AE76-23E3-4229-82C1-E41CB67D5B9C}",  # HEALTH     Windows 安全中心
+        "{7820AE77-23E3-4229-82C1-E41CB67D5B9C}",  # LOCATION   定位
+        "{7820AE78-23E3-4229-82C1-E41CB67D5B9C}",  # HARDWARE   硬件安全删除
+        "{7820AE81-23E3-4229-82C1-E41CB67D5B9C}",  # UPDATE     更新
+        "{7820AE82-23E3-4229-82C1-E41CB67D5B9C}",  # MICROPHONE 麦克风
+        "{7820AE83-23E3-4229-82C1-E41CB67D5B9C}",  # MEETNOW    立即开会
+    })
+
+    # 部分系统托盘图标（如 Windows 安全中心）并非通过固定 GUID 注册，而是由
+    # 独立系统进程用普通 hWnd/uID 注册，GUID 过滤对其无效。改按创建图标的
+    # 进程可执行名（小写）过滤。
+    _FILTERED_PROCESSES = frozenset({
+        "securityhealthsystray.exe",  # Windows 安全中心
     })
 
     def __init__(self, notification_area: NotificationArea, class_name: str | None = None):
@@ -389,8 +404,21 @@ class TrayService(QObject):
 
         # 过滤系统托盘图标（如音量）：Win11 下无法正确接管，直接丢弃其增删改事件。
         if icon.guid and icon.guid.upper() in self._FILTERED_GUIDS:
-            logger.debug("过滤系统托盘图标: guid=%s title=%r", icon.guid, icon.title)
+            logger.debug("过滤系统托盘图标(GUID): guid=%s title=%r", icon.guid, icon.title)
             return
+
+        # 按创建进程可执行名过滤（如 Windows 安全中心，不走 GUID 注册）。
+        if icon.hWnd and self._FILTERED_PROCESSES:
+            try:
+                image_path = api.get_process_image_path(icon.hWnd)
+                if image_path:
+                    exe_name = image_path.rsplit("\\", 1)[-1].lower()
+                    if exe_name in self._FILTERED_PROCESSES:
+                        logger.debug("过滤系统托盘图标(进程): exe=%s title=%r",
+                                     exe_name, icon.title)
+                        return
+            except Exception:
+                logger.debug("获取托盘图标进程名失败: hWnd=0x%X", icon.hWnd, exc_info=True)
 
         # 有效性过滤（对照 ManagedShell SysTrayCallback）：
         # 新增/修改图标必须有有效的窗口句柄（或 GUID），否则视为无效数据丢弃。
