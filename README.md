@@ -11,8 +11,7 @@ A Windows taskbar replacement implemented in Python, designed for RDP RemoteApp 
 - Window management (task list)
 - Tray management (notification area)
 - Taskbar positioning (AppBar)
-
-Not included: Start menu, theming system, localization, auto-update.
+- Localization (i18n)
 
 ## Tech Stack
 
@@ -21,20 +20,6 @@ Not included: Start menu, theming system, localization, auto-update.
 - ctypes / pywin32
 - PyInstaller
 - uv
-
-## Project Structure
-
-```text
-remoteappdock/
-├── main.py
-├── app.py
-├── config.py
-├── models/          # Data models
-├── win32/           # Win32 API wrappers
-├── services/        # Business services
-├── ui/              # PySide6 UI
-└── utils/           # Utilities
-```
 
 ## Development
 
