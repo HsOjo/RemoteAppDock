@@ -22,12 +22,17 @@ import signal
 from PySide6.QtWidgets import QApplication
 
 from remoteappdock.app import App
+from remoteappdock.config import AppConfig
 
 
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("RemoteAppDock")
+    app.setOrganizationName("remoteappdock")
     app.setApplicationVersion("0.1.0")
+
+    # 加载配置（必须在 setOrganizationName 之后，否则 QStandardPaths 路径不一致）
+    config = AppConfig.load()
 
     # 全局 QToolTip 样式：明确前景/背景色，避免继承深色主题后白底白字或黑底黑字。
     app.setStyleSheet(
@@ -35,7 +40,7 @@ def main():
         "border: 1px solid #999; padding: 2px; }"
     )
 
-    retro_app = App()
+    retro_app = App(config)
     retro_app.start()
 
     # 确保任何退出方式（窗口关闭、Ctrl+C、正常退出）都会清理并恢复 Explorer 任务栏

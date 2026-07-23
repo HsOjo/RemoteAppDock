@@ -4,10 +4,11 @@ import ctypes
 import logging
 import subprocess
 
-from PySide6.QtCore import QTimer, Qt, QPoint
-from PySide6.QtGui import QMouseEvent, QContextMenuEvent
+from PySide6.QtCore import QCoreApplication, QTimer, Qt, QPoint
+from PySide6.QtGui import QGuiApplication, QMouseEvent, QContextMenuEvent
 from PySide6.QtWidgets import QMainWindow, QWidget, QBoxLayout, QSizePolicy, QApplication, QMenu
 
+from remoteappdock.config import AppConfig
 from remoteappdock.services.notification_area import NotificationArea
 from remoteappdock.services.tray_service import TrayService
 from remoteappdock.services.tasks_service import WindowManager, TasksService
@@ -29,17 +30,18 @@ class TaskbarWindow(QMainWindow):
 
     def __init__(self, notification_area: NotificationArea, tray_service: TrayService,
                  window_manager: WindowManager, tasks_service: TasksService,
-                 appbar_manager: AppBarManager | None = None, parent=None):
+                 appbar_manager: AppBarManager | None = None,
+                 config: AppConfig | None = None, parent=None):
         super().__init__(parent)
         self._notification_area = notification_area
         self._tray_service = tray_service
         self._window_manager = window_manager
         self._tasks_service = tasks_service
         self._appbar_manager = appbar_manager
+        self._config = config or AppConfig.load()
         self._buttons: dict[int, TaskButton] = {}
 
         self.setWindowTitle("")
-        self.resize(128, 480)
         self.setMinimumWidth(72)
 
         # 窄边框窗体：保留系统细边框（避免无边框时透明区域点击穿透），
@@ -94,6 +96,14 @@ class TaskbarWindow(QMainWindow):
         if self._appbar_manager is not None:
             self._appbar_manager = None
 
+        # 根据保存的配置恢复尺寸与位置
+        self._restore_geometry()
+
+        # 保存几何信息的防抖定时器（500ms 内无变化才写入，避免拖拽时频繁写盘）
+        self._save_geometry_timer = QTimer(self)
+        self._save_geometry_timer.setSingleShot(True)
+        self._save_geometry_timer.timeout.connect(self._save_geometry)
+
         self._acrylic_applied = False
 
     def showEvent(self, event) -> None:
@@ -127,11 +137,96 @@ class TaskbarWindow(QMainWindow):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._icons_list.refresh_icon_rects()
+        self._request_save_geometry()
 
     def moveEvent(self, event) -> None:
         super().moveEvent(event)
         # 窗口移动后子图标的屏幕坐标变化，需重新上报以保证托盘菜单定位正确。
         self._icons_list.refresh_icon_rects()
+        self._request_save_geometry()
+
+    def closeEvent(self, event) -> None:
+        # 关闭前立即保存一次几何信息，确保退出位置被记录
+        self._save_geometry()
+        super().closeEvent(event)
+
+    def _request_save_geometry(self) -> None:
+        """触发防抖保存窗口几何信息。"""
+        if self._save_geometry_timer is not None:
+            self._save_geometry_timer.start(500)
+
+    def _save_geometry(self) -> None:
+        """将当前窗口位置与尺寸写入配置。"""
+        if self._config is None:
+            return
+        geo = self.geometry()
+        self._config.geometry.x = geo.x()
+        self._config.geometry.y = geo.y()
+        self._config.geometry.width = geo.width()
+        self._config.geometry.height = geo.height()
+        self._config.save()
+
+    def _restore_geometry(self) -> None:
+        """从配置恢复窗口尺寸与位置，并确保不会超出屏幕。"""
+        geo = self._config.geometry
+        width = max(self.minimumWidth(), min(geo.width, 400))
+        height = max(self.minimumHeight(), min(geo.height, 800))
+
+        # 未记录过位置时给个合理的默认位置：主屏幕右下角
+        if geo.x < 0 or geo.y < 0:
+            screen = QGuiApplication.primaryScreen()
+            if screen:
+                rect = screen.availableGeometry()
+                x = rect.right() - width
+                y = rect.bottom() - height
+            else:
+                x, y = 100, 100
+        else:
+            x, y = geo.x, geo.y
+
+        self.resize(width, height)
+        self.move(x, y)
+        self._ensure_geometry_on_screen()
+
+    def _ensure_geometry_on_screen(self) -> None:
+        """确保窗口整体位于某个屏幕工作区内；若超出则调整到最近的可见位置。"""
+        app = QCoreApplication.instance()
+        if app is None:
+            return
+
+        geo = self.geometry()
+        # 先尝试查找窗口中心所在屏幕
+        center = geo.center()
+        screen = QGuiApplication.screenAt(center)
+        if screen is None:
+            # 若中心不在任何屏幕，则取离左上角最近的屏幕
+            screens = QGuiApplication.screens()
+            if not screens:
+                return
+            screen = screens[0]
+            min_distance = float("inf")
+            for s in screens:
+                rect = s.availableGeometry()
+                distance = abs(rect.x() - geo.x()) + abs(rect.y() - geo.y())
+                if distance < min_distance:
+                    min_distance = distance
+                    screen = s
+
+        if screen is None:
+            return
+
+        work = screen.availableGeometry()
+        # 至少要保留 32x32 可见区域在屏幕内，方便用户拖拽
+        min_visible = 32
+        x = max(work.left() - geo.width() + min_visible, min(geo.x(), work.right() - min_visible))
+        y = max(work.top() - geo.height() + min_visible, min(geo.y(), work.bottom() - min_visible))
+
+        # 限制尺寸不超过工作区
+        new_width = min(geo.width(), work.width())
+        new_height = min(geo.height(), work.height())
+
+        if (x, y, new_width, new_height) != (geo.x(), geo.y(), geo.width(), geo.height()):
+            self.setGeometry(x, y, new_width, new_height)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # 在窗体空白处按下左键开始拖拽移动；子控件（按钮/图标）会各自消费事件，
@@ -152,6 +247,8 @@ class TaskbarWindow(QMainWindow):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_offset = None
+            # 拖拽结束后立即保存位置，避免用户直接结束进程导致防抖定时器未触发
+            self._save_geometry()
             event.accept()
         else:
             super().mouseReleaseEvent(event)

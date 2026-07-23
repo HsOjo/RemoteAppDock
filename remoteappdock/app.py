@@ -11,12 +11,14 @@ from remoteappdock.services.tasks_service import WindowManager, TasksService
 from remoteappdock.services.appbar_manager import AppBarManager
 from remoteappdock.services.hotkey_manager import HotkeyManager
 from remoteappdock.services.explorer_helper import ExplorerHelper
+from remoteappdock.config import AppConfig
 
 
 class App:
     """管理应用启动、关闭与单实例。"""
 
-    def __init__(self):
+    def __init__(self, config: AppConfig | None = None):
+        self._config = config or AppConfig.load()
         self._main_window: QMainWindow | None = None
         self._notification_area: NotificationArea | None = None
         self._tray_service: TrayService | None = None
@@ -62,7 +64,7 @@ class App:
         self._main_window = TaskbarWindow(
             self._notification_area, self._tray_service,
             self._window_manager, self._tasks_service,
-            self._appbar_manager
+            self._appbar_manager, self._config
         )
         self._main_window.show()
 
