@@ -31,6 +31,18 @@
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
+    <message>
+        <source>About</source>
+        <translation>关于</translation>
+    </message>
+    <message>
+        <source>About RemoteAppDock</source>
+        <translation>关于 RemoteAppDock</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;RemoteAppDock&lt;/b&gt;&lt;br&gt;Version: {version}&lt;br&gt;&lt;br&gt;A Windows taskbar replacement for RDP RemoteApp environments.&lt;br&gt;&lt;br&gt;Repository: &lt;a href=&quot;{repo_url}&quot;&gt;{repo_url}&lt;/a&gt;</source>
+        <translation>&lt;b&gt;RemoteAppDock&lt;/b&gt;&lt;br&gt;版本：{version}&lt;br&gt;&lt;br&gt;面向 RDP RemoteApp 环境部署的 Windows 任务栏替代方案。&lt;br&gt;&lt;br&gt;仓库地址：&lt;a href=&quot;{repo_url}&quot;&gt;{repo_url}&lt;/a&gt;</translation>
+    </message>
 </context>
 <context>
     <name>UpdateChecker</name>

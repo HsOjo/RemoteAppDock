@@ -6,7 +6,7 @@ import subprocess
 
 from PySide6.QtCore import QCoreApplication, QTimer, Qt, QPoint
 from PySide6.QtGui import QGuiApplication, QMouseEvent, QContextMenuEvent
-from PySide6.QtWidgets import QMainWindow, QWidget, QBoxLayout, QSizePolicy, QApplication, QMenu
+from PySide6.QtWidgets import QMainWindow, QWidget, QBoxLayout, QSizePolicy, QApplication, QMenu, QMessageBox, QLabel
 
 from remoteappdock.config import AppConfig
 from remoteappdock.services.notification_area import NotificationArea
@@ -17,6 +17,7 @@ from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
 from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result
 from remoteappdock.utils.helpers import get_app_icon_path
+from remoteappdock.version import APP_VERSION, GITHUB_OWNER, GITHUB_REPO
 from remoteappdock.win32 import api, constants
 from remoteappdock.win32.structs import MARGINS
 
@@ -314,6 +315,7 @@ class TaskbarWindow(QMainWindow):
         menu.addAction(self.tr("Check for Updates"), self._check_for_updates)
 
         menu.addSeparator()
+        menu.addAction(self.tr("About"), self._show_about)
         menu.addAction(self.tr("Exit"), QApplication.quit)
         menu.exec(event.globalPos())
 
@@ -359,6 +361,25 @@ class TaskbarWindow(QMainWindow):
 
         from remoteappdock.i18n import set_application_language
         set_application_language(qt_app, language)
+
+    def _show_about(self) -> None:
+        """显示关于对话框，介绍应用信息与仓库位置。"""
+        repo_url = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}"
+        text = self.tr(
+            "<b>RemoteAppDock</b><br>"
+            "Version: {version}<br><br>"
+            "A Windows taskbar replacement for RDP RemoteApp environments.<br><br>"
+            "Repository: <a href=\"{repo_url}\">{repo_url}</a>"
+        ).format(version=APP_VERSION, repo_url=repo_url)
+        msg = QMessageBox(self)
+        msg.setWindowTitle(self.tr("About RemoteAppDock"))
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        # 让 QMessageBox 内部 QLabel 的仓库链接可被点击并在默认浏览器打开
+        for label in msg.findChildren(QLabel):
+            label.setOpenExternalLinks(True)
+        msg.exec()
 
     def _on_window_added(self, window) -> None:
         if window.handle in self._buttons:
