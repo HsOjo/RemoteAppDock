@@ -1,6 +1,6 @@
 [project]
 name = "remoteappdock"
-version = "0.3.0"
+version = "0.4.0"
 description = "RemoteAppDock - Python reimplementation of the Windows taskbar and notification area for RDP RemoteApp environments."
 requires-python = ">=3.13"
 readme = "README.md"
