@@ -1,16 +1,22 @@
 """HICON 与图标转换工具。"""
 
 import logging
-import ctypes
-from ctypes import byref, sizeof, create_unicode_buffer
 
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
-from remoteappdock.win32 import api, constants
-from remoteappdock.win32.structs import HICON, SHFILEINFO, ICONINFO, BITMAPINFO, BITMAPINFOHEADER, RGBQUAD
+from remoteappdock.platform import IS_WINDOWS
 
 
 logger = logging.getLogger(__name__)
+
+if IS_WINDOWS:
+    import ctypes
+    from ctypes import byref, sizeof, create_unicode_buffer
+    from PySide6.QtGui import QImage
+    from remoteappdock.win32 import api, constants
+    from remoteappdock.win32.structs import (
+        HICON, SHFILEINFO, ICONINFO, BITMAPINFO, BITMAPINFOHEADER, RGBQUAD
+    )
 
 
 class IconConverter:
@@ -19,7 +25,7 @@ class IconConverter:
     @staticmethod
     def hicon_to_pixmap(hicon: int) -> QPixmap | None:
         """将 HICON 转换为 QPixmap。"""
-        if not hicon:
+        if not hicon or not IS_WINDOWS:
             return None
         try:
             # 先用 GetIconInfo 校验句柄并获取尺寸
@@ -105,6 +111,8 @@ class IconConverter:
     @staticmethod
     def extract_icon_from_file(path: str, index: int = 0, large: bool = True) -> int:
         """从可执行文件或 DLL 提取图标句柄。"""
+        if not IS_WINDOWS:
+            return 0
         hicon_large = HICON()
         hicon_small = HICON()
 
@@ -121,7 +129,7 @@ class IconConverter:
     @staticmethod
     def extract_icon_from_file_info(path: str, large: bool = False) -> int:
         """通过 SHGetFileInfo 获取文件图标句柄。"""
-        if not path:
+        if not path or not IS_WINDOWS:
             return 0
         shinfo = SHFILEINFO()
         flags = constants.SHGFI_ICON
@@ -132,7 +140,7 @@ class IconConverter:
     @staticmethod
     def extract_icon_from_window(hwnd: int, large: bool = False) -> int:
         """根据窗口句柄获取其进程可执行文件的图标句柄。"""
-        if not hwnd:
+        if not hwnd or not IS_WINDOWS:
             return 0
         pid = api.get_window_process_id(hwnd)
         h_process = api.OpenProcess(constants.PROCESS_QUERY_LIMITED_INFORMATION, False, pid)

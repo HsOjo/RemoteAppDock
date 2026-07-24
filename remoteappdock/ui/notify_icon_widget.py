@@ -3,13 +3,22 @@
 import logging
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QMouseEvent, QWheelEvent
+from PySide6.QtGui import QMouseEvent, QWheelEvent, QCursor
 from PySide6.QtWidgets import QLabel
 
-from remoteappdock.win32 import constants, api
-from remoteappdock.win32.structs import POINT
 from remoteappdock.models.notify_icon import NotifyIcon
+from remoteappdock.platform import IS_WINDOWS
 from remoteappdock.utils.icon_converter import IconConverter
+
+if IS_WINDOWS:
+    from remoteappdock.win32 import constants, api
+    from remoteappdock.win32.structs import POINT
+else:
+    # 非 Windows 平台只需要消息常量名供 _forward/mock 使用
+    class _MockConstants:
+        def __getattr__(self, name: str) -> int:
+            return 0
+    constants = _MockConstants()
 
 
 logger = logging.getLogger(__name__)
@@ -27,9 +36,10 @@ class NotifyIconWidget(QLabel):
         "NotifyIconWidget { border: none; border-radius: 4px; background: transparent; }"
         "NotifyIconWidget:hover { background: rgba(255, 255, 255, 40); }"
     )
-    # 无图标占位符：额外补充文字颜色，其余复用无边框 hover 反馈。
+    # 无图标占位符：给默认背景色和边框，确保在非 Windows 预览或系统主题下可见。
     _PLACEHOLDER_STYLE = (
-        "NotifyIconWidget { color: white; border: none; border-radius: 4px; background: transparent; }"
+        "NotifyIconWidget { color: white; border: 1px solid rgba(255, 255, 255, 80); "
+        "border-radius: 4px; background: rgba(80, 80, 80, 160); }"
         "NotifyIconWidget:hover { background: rgba(255, 255, 255, 40); }"
     )
 
@@ -83,13 +93,18 @@ class NotifyIconWidget(QLabel):
     def _packed_cursor_pos() -> int:
         """获取当前光标屏幕坐标（物理像素）并打包为 (x & 0xFFFF) | (y << 16)。
 
-        直接用 Win32 GetCursorPos 取物理像素，绕开 Qt 的 DPI 逻辑坐标转换，
+        Windows 下直接用 Win32 GetCursorPos 取物理像素，绕开 Qt 的 DPI 逻辑坐标转换，
         保证 version 4 图标菜单定位在高 DPI 下正确。
+        非 Windows 平台使用 QCursor.pos() 作为 mock。
         """
-        pt = POINT()
-        if api.GetCursorPos(pt):
-            return (pt.x & 0xFFFF) | ((pt.y & 0xFFFF) << 16)
-        return 0
+        if IS_WINDOWS:
+            pt = POINT()
+            if api.GetCursorPos(pt):
+                return (pt.x & 0xFFFF) | ((pt.y & 0xFFFF) << 16)
+            return 0
+
+        pos = QCursor.pos()
+        return (pos.x() & 0xFFFF) | ((pos.y() & 0xFFFF) << 16)
 
     def _forward(self, msg: int) -> bool:
         """转发鼠标消息，自动附带光标坐标与图标 version。"""

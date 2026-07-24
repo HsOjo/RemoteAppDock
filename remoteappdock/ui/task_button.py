@@ -1,12 +1,19 @@
 """任务按钮 UI。"""
 
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QMouseEvent, QContextMenuEvent, QFontMetrics
+from PySide6.QtGui import QMouseEvent, QContextMenuEvent, QFontMetrics, QPixmap
 from PySide6.QtWidgets import QPushButton, QMenu, QSizePolicy
 
-from remoteappdock.services.tasks_service import WindowManager, TasksService
 from remoteappdock.models.application_window import ApplicationWindow
+from remoteappdock.platform import IS_WINDOWS
+from remoteappdock.utils.helpers import get_app_icon_png_path
 from remoteappdock.utils.icon_converter import IconConverter
+
+if IS_WINDOWS:
+    from remoteappdock.services.tasks_service import WindowManager, TasksService
+else:
+    from remoteappdock.services.dummy import DummyWindowManager as WindowManager
+    from remoteappdock.services.dummy import DummyTasksService as TasksService
 
 
 class TaskButton(QPushButton):
@@ -45,14 +52,19 @@ class TaskButton(QPushButton):
         self.clicked.connect(self._on_clicked)
 
     def _load_icon(self) -> None:
-        """从窗口进程可执行文件加载图标。"""
+        """加载窗口进程图标；非 Windows 平台使用应用图标占位。"""
         try:
-            hicon = IconConverter.extract_icon_from_window(self._window.handle, large=False)
-            if hicon:
-                pixmap = IconConverter.hicon_to_pixmap(hicon)
-                if pixmap:
-                    self.setIcon(pixmap)
-                    # SHGetFileInfo 返回的图标通常由系统缓存，我们不负责销毁
+            if IS_WINDOWS:
+                hicon = IconConverter.extract_icon_from_window(self._window.handle, large=False)
+                if hicon:
+                    pixmap = IconConverter.hicon_to_pixmap(hicon)
+                    if pixmap:
+                        self.setIcon(pixmap)
+                        # SHGetFileInfo 返回的图标通常由系统缓存，我们不负责销毁
+            else:
+                icon_path = get_app_icon_png_path()
+                if icon_path.exists():
+                    self.setIcon(QPixmap(str(icon_path)))
         except Exception:
             pass
 

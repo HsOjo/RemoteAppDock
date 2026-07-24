@@ -12,5 +12,10 @@ def get_app_root() -> Path:
 
 
 def get_app_icon_path() -> Path:
-    """返回应用图标文件路径。"""
+    """返回应用图标文件路径（.ico，Windows 专用）。"""
     return get_app_root() / "assets" / "app-icon.ico"
+
+
+def get_app_icon_png_path() -> Path:
+    """返回应用图标 PNG 文件路径（跨平台）。"""
+    return get_app_root() / "assets" / "app-icon-256.png"

@@ -1,7 +1,12 @@
+import sys
+
 import pytest
 
-from remoteappdock.win32 import constants, structs
-from remoteappdock.win32.message_pump import Win32MessageThread
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="仅 Windows 平台支持")
+
+if sys.platform == "win32":
+    from remoteappdock.win32 import constants, structs
+    from remoteappdock.win32.message_pump import Win32MessageThread
 
 
 def test_notify_icon_data_size():

@@ -1,14 +1,19 @@
+import sys
+
 import pytest
-import ctypes
-from ctypes import byref, cast, sizeof, create_string_buffer
 
 from PySide6.QtCore import QCoreApplication
 
-from remoteappdock.win32 import constants, api
-from remoteappdock.win32.api import SendMessageW, PostMessageW, FindWindowW
-from remoteappdock.win32.structs import COPYDATASTRUCT, SHELLTRAYDATA, NOTIFYICONDATA, GUID
-from remoteappdock.services.notification_area import NotificationArea
-from remoteappdock.services.tray_service import TrayService
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="仅 Windows 平台支持")
+
+if sys.platform == "win32":
+    import ctypes
+    from ctypes import byref, cast, sizeof, create_string_buffer
+    from remoteappdock.win32 import constants, api
+    from remoteappdock.win32.api import SendMessageW, PostMessageW, FindWindowW
+    from remoteappdock.win32.structs import COPYDATASTRUCT, SHELLTRAYDATA, NOTIFYICONDATA, GUID
+    from remoteappdock.services.notification_area import NotificationArea
+    from remoteappdock.services.tray_service import TrayService
 
 
 @pytest.fixture

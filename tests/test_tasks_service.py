@@ -1,8 +1,14 @@
+import logging
+import sys
+
 import pytest
 
 from PySide6.QtCore import QCoreApplication
 
-from remoteappdock.services.tasks_service import WindowManager, TasksService
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="仅 Windows 平台支持")
+
+if sys.platform == "win32":
+    from remoteappdock.services.tasks_service import WindowManager, TasksService
 
 
 @pytest.fixture
@@ -23,7 +29,7 @@ def test_tasks_service_starts(qt_app):
         assert len(wm.get_windows()) >= 1
         # 至少应该包含当前测试控制台窗口
         titles = [w.title for w in wm.get_windows()]
-        print("枚举到的窗口:", titles)
+        logger.info("枚举到的窗口: %s", titles)
     finally:
         service.stop()
 

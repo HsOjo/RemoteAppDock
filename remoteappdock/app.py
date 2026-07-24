@@ -6,16 +6,29 @@ from typing import Callable
 from PySide6.QtCore import QCoreApplication, QTimer
 from PySide6.QtWidgets import QMainWindow
 
-from remoteappdock.ui.taskbar_window import TaskbarWindow
-from remoteappdock.services.notification_area import NotificationArea
-from remoteappdock.services.tray_service import TrayService
-from remoteappdock.services.explorer_tray_service import ExplorerTrayService
-from remoteappdock.services.tasks_service import WindowManager, TasksService
-from remoteappdock.services.appbar_manager import AppBarManager
-from remoteappdock.services.hotkey_manager import HotkeyManager
-from remoteappdock.services.explorer_helper import ExplorerHelper
-from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
 from remoteappdock.config import AppConfig
+from remoteappdock.platform import IS_WINDOWS
+from remoteappdock.services.notification_area import NotificationArea
+from remoteappdock.ui.taskbar_window import TaskbarWindow
+
+if IS_WINDOWS:
+    from remoteappdock.services.tray_service import TrayService
+    from remoteappdock.services.explorer_tray_service import ExplorerTrayService
+    from remoteappdock.services.tasks_service import WindowManager, TasksService
+    from remoteappdock.services.appbar_manager import AppBarManager
+    from remoteappdock.services.hotkey_manager import HotkeyManager
+    from remoteappdock.services.explorer_helper import ExplorerHelper
+    from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
+else:
+    from remoteappdock.services.dummy import (
+        DummyWindowManager as WindowManager,
+        DummyTasksService as TasksService,
+        DummyTrayService as TrayService,
+        DummyAppBarManager as AppBarManager,
+        DummyHotkeyManager as HotkeyManager,
+        DummyExplorerHelper as ExplorerHelper,
+        DummySnapLayoutHelper as SnapLayoutHelper,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +61,32 @@ class App:
 
         self._notification_area = NotificationArea()
 
+        if IS_WINDOWS:
+            self._start_windows_services()
+        else:
+            self._start_dummy_services()
+
+        # 主窗口
+        self._main_window = TaskbarWindow(
+            self._notification_area, self._tray_service,
+            self._window_manager, self._tasks_service,
+            self._appbar_manager, self._config,
+            snap_layout_helper=self._snap_layout_helper,
+        )
+        self._main_window.show()
+
+        # 每 50ms 从 Win32 线程 drain 事件到主线程
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._drain_all_events)
+        self._timer.start(50)
+
+        # 当服务产生事件时立即触发 drain
+        if self._tray_service is not None:
+            self._tray_service.icon_event.connect(self._drain_all_events)
+        if self._tasks_service is not None:
+            self._tasks_service.window_event.connect(self._drain_all_events)
+
+    def _start_windows_services(self):
         # 在隐藏 Explorer 任务栏之前，先枚举其现有托盘图标（仅 Win10 及带
         # ToolbarWindow32 的旧版任务栏有效；Win11 XAML 托盘会返回 0，不报错）。
         # 补齐启动前已注册、不会响应 TaskbarCreated 广播的常驻第三方图标。
@@ -78,23 +117,18 @@ class App:
         self._hotkey_manager = HotkeyManager(self._tasks_service)
         self._hotkey_manager.start()
 
-        # 主窗口
-        self._main_window = TaskbarWindow(
-            self._notification_area, self._tray_service,
-            self._window_manager, self._tasks_service,
-            self._appbar_manager, self._config,
-            snap_layout_helper=self._snap_layout_helper,
-        )
-        self._main_window.show()
-
-        # 每 50ms 从 Win32 线程 drain 事件到主线程
-        self._timer = QTimer()
-        self._timer.timeout.connect(self._drain_all_events)
-        self._timer.start(50)
-
-        # 当服务产生事件时立即触发 drain
-        self._tray_service.icon_event.connect(self._drain_all_events)
-        self._tasks_service.window_event.connect(self._drain_all_events)
+    def _start_dummy_services(self):
+        """非 Windows 平台：使用 dummy 服务，仅用于 UI 预览。"""
+        self._snap_layout_helper = SnapLayoutHelper()
+        self._tray_service = TrayService(self._notification_area)
+        self._window_manager = WindowManager()
+        self._tasks_service = TasksService(self._window_manager)
+        self._appbar_manager = AppBarManager()
+        self._hotkey_manager = HotkeyManager()
+        # 热键/窗口/托盘服务在 dummy 中均为空实现，start() 只打印日志
+        self._tray_service.start()
+        self._tasks_service.start()
+        self._hotkey_manager.start()
 
     def activate(self) -> None:
         """将主窗口带到前台（供单实例激活请求调用）。"""

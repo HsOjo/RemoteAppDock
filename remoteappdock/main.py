@@ -25,17 +25,25 @@ from PySide6.QtWidgets import QApplication
 from remoteappdock.app import App
 from remoteappdock.config import AppConfig
 from remoteappdock.i18n import install_translator
-from remoteappdock.single_instance import SingleInstanceManager
+from remoteappdock.platform import IS_WINDOWS
 from remoteappdock.utils.helpers import get_app_icon_path
+from remoteappdock.utils.logging import configure_logging
 from remoteappdock.version import APP_VERSION
+
+if IS_WINDOWS:
+    from remoteappdock.single_instance import SingleInstanceManager
 
 
 def main():
-    single = SingleInstanceManager()
-    if not single.try_acquire():
-        # 已有实例在运行：尝试激活现有窗口后退出
-        single.activate_existing_instance()
-        sys.exit(0)
+    configure_logging()
+
+    single = None
+    if IS_WINDOWS:
+        single = SingleInstanceManager()
+        if not single.try_acquire():
+            # 已有实例在运行：尝试激活现有窗口后退出
+            single.activate_existing_instance()
+            sys.exit(0)
 
     app = QApplication(sys.argv)
     app.setApplicationName("RemoteAppDock")
@@ -56,15 +64,17 @@ def main():
         "border: 1px solid #999; padding: 2px; }"
     )
 
-    retro_app = App(config)
-    single.set_on_activate(retro_app.activate)
-    retro_app.add_drain_callback(single.process_activate_event)
-    single.start_listener()
-    retro_app.start()
+    rad_app = App(config)
+    if single is not None:
+        single.set_on_activate(rad_app.activate)
+        rad_app.add_drain_callback(single.process_activate_event)
+        single.start_listener()
+    rad_app.start()
 
     # 确保任何退出方式（窗口关闭、Ctrl+C、正常退出）都会清理并恢复 Explorer 任务栏
-    app.aboutToQuit.connect(retro_app.shutdown)
-    app.aboutToQuit.connect(single.release)
+    app.aboutToQuit.connect(rad_app.shutdown)
+    if single is not None:
+        app.aboutToQuit.connect(single.release)
 
     def _sigint_handler(signum, frame):
         app.quit()
@@ -75,8 +85,9 @@ def main():
         sys.exit(app.exec())
     finally:
         # aboutToQuit 在 exec() 返回前触发，此处作为最终兜底
-        retro_app.shutdown()
-        single.release()
+        rad_app.shutdown()
+        if single is not None:
+            single.release()
 
 
 if __name__ == "__main__":

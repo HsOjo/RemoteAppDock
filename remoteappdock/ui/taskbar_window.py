@@ -9,18 +9,31 @@ from PySide6.QtGui import QGuiApplication, QMouseEvent, QContextMenuEvent
 from PySide6.QtWidgets import QMainWindow, QWidget, QBoxLayout, QSizePolicy, QApplication, QMenu, QMessageBox, QLabel
 
 from remoteappdock.config import AppConfig
+from remoteappdock.platform import IS_WINDOWS
 from remoteappdock.services.notification_area import NotificationArea
-from remoteappdock.services.tray_service import TrayService
-from remoteappdock.services.tasks_service import WindowManager, TasksService
-from remoteappdock.services.appbar_manager import AppBarManager
-from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
+
+if IS_WINDOWS:
+    import ctypes
+    from remoteappdock.win32 import api, constants
+    from remoteappdock.win32.structs import MARGINS
+    from remoteappdock.services.tray_service import TrayService
+    from remoteappdock.services.tasks_service import WindowManager, TasksService
+    from remoteappdock.services.appbar_manager import AppBarManager
+    from remoteappdock.services.snap_layout_helper import SnapLayoutHelper
+else:
+    from remoteappdock.services.dummy import (
+        DummyTrayService as TrayService,
+        DummyWindowManager as WindowManager,
+        DummyTasksService as TasksService,
+        DummyAppBarManager as AppBarManager,
+        DummySnapLayoutHelper as SnapLayoutHelper,
+    )
+
 from remoteappdock.ui.notify_icon_list import NotifyIconList
 from remoteappdock.ui.task_button import TaskButton
 from remoteappdock.update_checker import UpdateCheckThread, show_update_error, show_update_result, center_dialog
 from remoteappdock.utils.helpers import get_app_icon_path
 from remoteappdock.version import APP_VERSION, GITHUB_OWNER, GITHUB_REPO
-from remoteappdock.win32 import api, constants
-from remoteappdock.win32.structs import MARGINS
 
 
 logger = logging.getLogger(__name__)
@@ -121,7 +134,13 @@ class TaskbarWindow(QMainWindow):
             self._apply_acrylic()
 
     def _apply_acrylic(self) -> None:
-        """启用 Win11 Acrylic 亚克力背景材质（Win11 22H2+ 生效，旧系统静默忽略）。"""
+        """启用 Win11 Acrylic 亚克力背景材质（Win11 22H2+ 生效，旧系统静默忽略）。
+
+        非 Windows 平台不执行任何操作。
+        """
+        if not IS_WINDOWS:
+            return
+
         hwnd = int(self.winId())
 
         # 设置应用图标作为窗口图标（标题栏、Alt-Tab、任务切换等）。
@@ -141,7 +160,10 @@ class TaskbarWindow(QMainWindow):
             logger.debug("启用 Acrylic 失败(HRESULT=0x%08X)，当前系统可能不支持", hr & 0xFFFFFFFF)
 
     def _set_window_icon(self, hwnd: int) -> None:
-        """使用应用图标文件设置窗口大/小图标。"""
+        """使用应用图标文件设置窗口大/小图标（仅 Windows）。"""
+        if not IS_WINDOWS:
+            return
+
         icon_path = get_app_icon_path()
         if not icon_path.exists():
             logger.warning("应用图标文件不存在: %s", icon_path)
@@ -330,6 +352,9 @@ class TaskbarWindow(QMainWindow):
 
     def _open_run_dialog(self) -> None:
         """打开 Windows“运行”对话框（shell32 RunFileDlg）。"""
+        if not IS_WINDOWS:
+            logger.info("[mock] 打开运行对话框")
+            return
         try:
             shell = ctypes.windll.shell32
             # RunFileDlg 序号导出为 #61：RunFileDlg(hwnd, hIcon, lpszDir, lpszTitle, lpszDesc, flags)
@@ -340,18 +365,27 @@ class TaskbarWindow(QMainWindow):
 
     def _open_task_manager(self) -> None:
         """启动任务管理器。"""
+        if not IS_WINDOWS:
+            logger.info("[mock] 启动任务管理器")
+            return
         try:
             subprocess.Popen(["taskmgr.exe"])
         except Exception:
             logger.exception("启动任务管理器失败")
 
     def _open_explorer(self) -> None:
+        if not IS_WINDOWS:
+            logger.info("[mock] 打开资源管理器")
+            return
         try:
             subprocess.Popen(["explorer.exe"])
         except Exception:
             logger.exception("打开资源管理器失败")
 
     def _open_cmd(self) -> None:
+        if not IS_WINDOWS:
+            logger.info("[mock] 打开命令提示符")
+            return
         try:
             subprocess.Popen(["cmd.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
         except Exception:
@@ -377,6 +411,10 @@ class TaskbarWindow(QMainWindow):
             return
         self._config.disable_snap_layout = enabled
         self._config.save()
+
+        if not IS_WINDOWS:
+            logger.info("[mock] 切换分屏禁用状态: %s", enabled)
+            return
 
         if self._snap_layout_helper is None:
             return

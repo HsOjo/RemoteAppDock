@@ -1,11 +1,15 @@
 """单实例管理相关测试。"""
 
+import sys
 import time
 import uuid
 
 import pytest
 
-from remoteappdock.single_instance import SingleInstanceManager
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="仅 Windows 平台支持")
+
+if sys.platform == "win32":
+    from remoteappdock.single_instance import SingleInstanceManager
 
 
 def _unique_names():
