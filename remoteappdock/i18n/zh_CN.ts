@@ -13,11 +13,15 @@
     </message>
     <message>
         <source>Explorer</source>
-        <translation>打开资源管理器</translation>
+        <translation>资源管理器</translation>
     </message>
     <message>
         <source>Command Prompt</source>
-        <translation>打开命令提示符</translation>
+        <translation>命令提示符</translation>
+    </message>
+    <message>
+        <source>Desktop</source>
+        <translation>桌面</translation>
     </message>
     <message>
         <source>Language</source>

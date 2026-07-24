@@ -323,6 +323,7 @@ class TaskbarWindow(QMainWindow):
         menu = QMenu(self)
         menu.addAction(self.tr("Run"), self._open_run_dialog)
         menu.addAction(self.tr("Task Manager"), self._open_task_manager)
+        menu.addAction(self.tr("Desktop"), self._open_desktop)
         menu.addAction(self.tr("Explorer"), self._open_explorer)
         menu.addAction(self.tr("Command Prompt"), self._open_cmd)
         menu.addSeparator()
@@ -390,6 +391,16 @@ class TaskbarWindow(QMainWindow):
             subprocess.Popen(["cmd.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
         except Exception:
             logger.exception("打开命令提示符失败")
+
+    def _open_desktop(self) -> None:
+        """打开桌面文件夹。"""
+        if not IS_WINDOWS:
+            logger.info("[mock] 打开桌面")
+            return
+        try:
+            subprocess.Popen(["explorer.exe", "shell:Desktop"])
+        except Exception:
+            logger.exception("打开桌面失败")
 
     def _set_language(self, language: str) -> None:
         """切换界面语言并持久化到配置（动态生效，已创建控件下次刷新时更新）。"""
